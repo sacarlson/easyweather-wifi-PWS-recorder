@@ -1,0 +1,10 @@
+192.168.1.7 - - [09/Aug/2025 12:02:36] "GET /data?ID=id1&PASSWORD=password1&tempf=86.9&humidity=70&dewptf=75.9&windchillf=86.9&winddir=275&windspeedmph=0.89&windgustmph=2.24&rainin=0.000&dailyrainin=0.000&weeklyrainin=0.118&monthlyrainin=0.118&yearlyrainin=0.618&totalrainin=0.618&solarradiation=278.54&UV=2&indoortempf=81.5&indoorhumidity=68&absbaromin=29.778&baromin=29.994&lowbatt=0&dateutc=now&softwaretype=EasyWeatherPro_V5.2.2&action=updateraw&realtime=1&rtfreq=5 HTTP/1.0" 200 -
+192.168.1.7 - - [09/Aug/2025 12:03:37] "GET /data?ID=id1&PASSWORD=password1&tempf=86.7&humidity=71&dewptf=76.3&windchillf=86.7&winddir=268&windspeedmph=0.00&windgustmph=0.00&rainin=0.000&dailyrainin=0.000&weeklyrainin=0.118&monthlyrainin=0.118&yearlyrainin=0.618&totalrainin=0.618&solarradiation=273.81&UV=2&indoortempf=81.3&indoorhumidity=67&absbaromin=29.775&baromin=29.991&lowbatt=0&dateutc=now&softwaretype=EasyWeatherPro_V5.2.2&action=updateraw&realtime=1&rtfreq=5 HTTP/1.0" 200 -
+
+This is what we get direct from the weather station when we setup custom with wuderweather format pointed to helloworld.py port 8080 to capture data
+
+to send to wunderground.com this is a sample used in a get request
+http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?ID=<YOUR_STATION_ID>&PASSWORD=<YOUR_PASSWORD>&action=updateraw&dateutc=now&winddir=270&windspeedmph=10&tempf=72&humidity=60&baromin=29.92&rainin=0.01
+
+
+urlsend = "http://"+host+path+"ID+"+id_user+"&PASSWORD="+password+"&action=updateraw&dateutc=now&winddir="+winddir+"&windspeedmph="+windspeedmph+"&tempf="+tempf+"&humidity="+humidity+"baromin="+baromin+"&rainin="+rainin
