@@ -1,5 +1,15 @@
-import sqlite3, datetime, requests
+import sqlite3, datetime, requests, configparser
 from flask import Flask, request
+
+lastday = 0
+mydailyrainin = 0.00
+lastdailyrainin = 0.00
+
+# Create a ConfigParser object
+config = configparser.ConfigParser()
+
+# Read the configuration file
+config.read('config.ini')
 
 def sendget(url):
     response = requests.get(url)
@@ -9,7 +19,33 @@ def sendget(url):
         print(response)  # Assuming the response is JSON
     else:
         print(f"Request failed with status code: {response.status_code}")
-    return response    
+    return response   
+
+def correctrain(dailyrainin):
+    global lastday
+    global mydailyrainin
+    global lastdailyrainin
+    event_time = datetime.datetime.now()
+    print(f"even_time: {event_time}")
+    day = event_time.day
+    print(f"day: {day}")
+    if day > lastday:
+        print ("true")
+        lastday = day
+        mydailyrainin = 0.00
+    else:
+        print (f"dailyrainin: {dailyrainin}")
+        if lastdailyrainin < float(dailyrainin):
+            mydailyrainin = (float(dailyrainin) - lastdailyrainin) + mydailyrainin
+            lastdailyrainin = float(dailyrainin)
+        else:
+            if lastdailyrainin > float(dailyrainin):
+                if float(dailyrainin) > 0:
+                    lastdailyrainin = float(dailyrainin)
+   
+    print (f"mydailyrainin: {mydailyrainin}")
+    return mydailyrainin
+ 
 
 app = Flask(__name__)
 
@@ -19,6 +55,7 @@ def home():
 
 @app.route('/data')
 def get_data():
+    global config
     # Access query parameters from a GET request
     tempf = request.args.get('tempf')
     humidity = request.args.get('humidity')
@@ -45,7 +82,7 @@ def get_data():
     print("humidity:",humidity)
     
      # Connect to a database file (creates it if it doesn't exist)
-    conn = sqlite3.connect('weather.db')
+    conn = sqlite3.connect(config['DATABASE']['filename'])
 
     # Create a cursor object to execute SQL commands
     cursor = conn.cursor()
@@ -73,28 +110,42 @@ CREATE TABLE IF NOT EXISTS wdata (
     softwaretype TEXT,
     action TEXT,
     realtime TEXT,
-    rtfreq REAL
+    rtfreq REAL,
+    mydailyrainin REAL
 );
 '''
     cursor.execute(create_table_sql)
     conn.commit() # Commit changes to the database
     print("Table 'wdata' created successfully.")
-
+    mydailyrainin = correctrain(dailyrainin)
+    print (f"mydailyrainin: {mydailyrainin}")
     event_time = datetime.datetime.now()
     # Insert a single row
-    cursor.execute("INSERT INTO wdata (tempf, humidity,indoortempf,rainin, windspeedmph,event_time,baromin,windgustmph,winddir,id_user,dailyrainin,solarradiation,uv,absbaromin,softwaretype,action,realtime,rtfreq,indoorhumidity) VALUES (?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (tempf, humidity, indoortempf, rainin, windspeedmph,event_time, baromin,windgustmph,winddir,id_user,dailyrainin,solarradiation,uv,absbaromin,softwaretype,action,realtime,rtfreq,indoorhumidity))
+    cursor.execute("INSERT INTO wdata (tempf, humidity,indoortempf,rainin, windspeedmph,event_time,baromin,windgustmph,winddir,id_user,dailyrainin,solarradiation,uv,absbaromin,softwaretype,action,realtime,rtfreq,indoorhumidity,mydailyrainin) VALUES (?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (tempf, humidity, indoortempf, rainin, windspeedmph,event_time, baromin,windgustmph,winddir,id_user,dailyrainin,solarradiation,uv,absbaromin,softwaretype,action,realtime,rtfreq,indoorhumidity,mydailyrainin))
 
     conn.commit()
     print("Data inserted successfully.")
     
-    #This is where we can repeat the data we received to wunderground.com or other pws recording sites. for test I send to my test site
-    # here we can also do the fix on the daily rain fall value due to bug in my weather station that reboots every 30 minutes  
-    host = "192.168.1.22:8080" 
-    path = "/data?"
-    urlsend="http://"+host+path+"ID="+id_user+"&PASSWORD="+password+"&action=updateraw&dateutc=now&winddir="+winddir+"&windspeedmph="+windspeedmph+"&tempf="+tempf+"&humidity="+humidity+"baromin="+baromin+"&rainin="+rainin    
     
-    #status=sendget(urlsend)
-    #print (f"sendget status{status}")
+    
+    #This is where we can repeat the data we received to wunderground.com or other pws recording sites. for test I send to my test site
+    # here we can also do the fix on the daily rain fall value due to bug in my weather station that reboots every 30 minutes
+    port = config['SERVER']['port']  
+    host = config['SERVER']['host']
+    host = host+port
+    path = config['SERVER']['path']
+    id_user = config['USER']['id_user']
+    password = config['USER']['password']
+    if config.getboolean('SERVER', 'send_corrected_rain'):
+        dailyrainin = str(mydailyrainin)
+    print (f"host: {host}")
+
+    urlsend="http://"+host+path+"ID="+id_user+"&PASSWORD="+password+"&action=updateraw&dateutc=now&winddir="+winddir+"&windspeedmph="+windspeedmph+"&tempf="+tempf+"&humidity="+humidity+"baromin="+baromin+"&rainin="+rainin+"&dailyrainin="+dailyrainin    
+
+    if config.getboolean('SERVER', 'enable_repeater'):    
+        status=sendget(urlsend)
+        print (f"sendget status{status}")
+    print (f"urlsend: {urlsend}")
 
     return f"<h1>Temp F.: {tempf}</h1>"
 
