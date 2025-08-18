@@ -2,7 +2,13 @@ import sqlite3, datetime, requests, configparser
 from flask import Flask, request
 
 lastday = 0
+lastweek = 0
+lastmonth = 0
+lastyear = 0
 mydailyrainin = 0.00
+myweeklyrainin = 0.00
+mymonthlyrainin = 0.00
+myyearlyrainin = 0.00
 lastdailyrainin = 0.00
 
 # Create a ConfigParser object
@@ -33,6 +39,7 @@ def correctrain(dailyrainin):
         print ("true")
         lastday = day
         mydailyrainin = 0.00
+        lastdailyrainin = 0.00
     else:
         print (f"dailyrainin: {dailyrainin}")
         if lastdailyrainin < float(dailyrainin):
@@ -44,6 +51,7 @@ def correctrain(dailyrainin):
                     lastdailyrainin = float(dailyrainin)
    
     print (f"mydailyrainin: {mydailyrainin}")
+    print (f"lastdailyrainin: {lastdailyrainin}")
     return mydailyrainin
  
 
@@ -118,7 +126,7 @@ CREATE TABLE IF NOT EXISTS wdata (
     conn.commit() # Commit changes to the database
     print("Table 'wdata' created successfully.")
     mydailyrainin = correctrain(dailyrainin)
-    print (f"mydailyrainin: {mydailyrainin}")
+    print (f"mydailyrainin in mm: {mydailyrainin*25.4}")
     event_time = datetime.datetime.now()
     # Insert a single row
     cursor.execute("INSERT INTO wdata (tempf, humidity,indoortempf,rainin, windspeedmph,event_time,baromin,windgustmph,winddir,id_user,dailyrainin,solarradiation,uv,absbaromin,softwaretype,action,realtime,rtfreq,indoorhumidity,mydailyrainin) VALUES (?, ?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (tempf, humidity, indoortempf, rainin, windspeedmph,event_time, baromin,windgustmph,winddir,id_user,dailyrainin,solarradiation,uv,absbaromin,softwaretype,action,realtime,rtfreq,indoorhumidity,mydailyrainin))
@@ -140,7 +148,7 @@ CREATE TABLE IF NOT EXISTS wdata (
         dailyrainin = str(mydailyrainin)
     print (f"host: {host}")
 
-    urlsend="http://"+host+path+"ID="+id_user+"&PASSWORD="+password+"&action=updateraw&dateutc=now&winddir="+winddir+"&windspeedmph="+windspeedmph+"&tempf="+tempf+"&humidity="+humidity+"baromin="+baromin+"&rainin="+rainin+"&dailyrainin="+dailyrainin    
+    urlsend="http://"+host+path+"ID="+id_user+"&PASSWORD="+password+"&action=updateraw&dateutc=now&winddir="+winddir+"&windspeedmph="+windspeedmph+"&tempf="+tempf+"&humidity="+humidity+"&baromin="+baromin+"&absbaromin="+absbaromin+"&rainin="+rainin+"&dailyrainin="+dailyrainin+"&UV="+uv+"&solarradiation="+solarradiation+"&windgustmph="+windgustmph    
 
     if config.getboolean('SERVER', 'enable_repeater'):    
         status=sendget(urlsend)
