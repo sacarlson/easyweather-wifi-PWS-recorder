@@ -48,6 +48,7 @@ def correctrain(dailyrainin):
         else:
             if lastdailyrainin > float(dailyrainin):
                 if float(dailyrainin) > 0:
+                    mydailyrainin = mydailyrainin + float(dailyrainin)
                     lastdailyrainin = float(dailyrainin)
    
     print (f"mydailyrainin: {mydailyrainin}")
